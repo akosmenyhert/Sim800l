@@ -34,7 +34,6 @@
 #include <SoftwareSerial.h>
 
 SoftwareSerial SIM(RX_PIN, TX_PIN);
-// String _buffer;
 
 void Sim800l::begin()
 {
@@ -148,10 +147,7 @@ bool Sim800l::answerCall()
     SIM.print(F("ATA\r\n"));
     _buffer = _readSerial();
     // Response in case of data call, if successfully connected
-    if ((_buffer.indexOf("OK")) != -1)
-        return true;
-    else
-        return false;
+    return ((_buffer.indexOf("OK")) != -1);
 }
 
 void Sim800l::callNumber(char *number)
@@ -179,10 +175,7 @@ bool Sim800l::hangoffCall()
 {
     SIM.print(F("ATH\r\n"));
     _buffer = _readSerial();
-    if ((_buffer.indexOf("OK")) != -1)
-        return true;
-    else
-        return false;
+    return ((_buffer.indexOf("OK")) != -1);
 }
 
 bool Sim800l::sendSms(char *number, char *text)
@@ -205,11 +198,7 @@ bool Sim800l::sendSms(char *number, char *text)
     _buffer = _readSerial();
 
     // expect CMGS:xxx   , where xxx is a number,for the sending sms.
-    if (((_buffer.indexOf("CMGS")) != -1)) {
-        return true;
-    } else {
-        return false;
-    }
+    return (((_buffer.indexOf("CMGS")) != -1));
 }
 
 String Sim800l::getNumberSms(uint8_t index)
@@ -221,9 +210,8 @@ String Sim800l::getNumberSms(uint8_t index)
         uint8_t _idx1 = _buffer.indexOf("+CMGR:");
         _idx1 = _buffer.indexOf("\",\"", _idx1 + 1);
         return _buffer.substring(_idx1 + 3, _buffer.indexOf("\",\"", _idx1 + 4));
-    } else {
-        return "";
     }
+    return "";
 }
 
 String Sim800l::readSms(uint8_t index)
@@ -236,21 +224,16 @@ String Sim800l::readSms(uint8_t index)
         _buffer = _readSerial();
         if (_buffer.indexOf("CMGR:") != -1) {
             return _buffer;
-        } else
-            return "";
-    } else
-        return "";
+        }
+    }
+    return "";
 }
 
 bool Sim800l::delAllSms()
 {
     SIM.print(F("at+cmgda=\"del all\"\n\r"));
     _buffer = _readSerial();
-    if (_buffer.indexOf("OK") != -1) {
-        return true;
-    } else {
-        return false;
-    }
+    return (_buffer.indexOf("OK") != -1);
 }
 
 void Sim800l::RTCtime(int *day, int *month, int *year, int *hour, int *minute, int *second)
@@ -258,11 +241,10 @@ void Sim800l::RTCtime(int *day, int *month, int *year, int *hour, int *minute, i
     SIM.print(F("at+cclk?\r\n"));
     // if respond with ERROR try one more time.
     _buffer = _readSerial();
-    if ((_buffer.indexOf("ERR")) != -1) {
+    if ((_buffer.indexOf("ERR")) >= 0) {
         delay(50);
         SIM.print(F("at+cclk?\r\n"));
-    }
-    if ((_buffer.indexOf("ERR")) == -1) {
+    } else {
         _buffer = _buffer.substring(_buffer.indexOf("\"") + 1, _buffer.lastIndexOf("\"") - 1);
         *year = _buffer.substring(0, 2).toInt();
         *month = _buffer.substring(3, 5).toInt();
@@ -273,15 +255,15 @@ void Sim800l::RTCtime(int *day, int *month, int *year, int *hour, int *minute, i
     }
 }
 
-// Get the time  of the base of GSM
+// Get the time of the base of GSM
 String Sim800l::dateNet()
 {
     SIM.print(F("AT+CIPGSMLOC=2,1\r\n "));
     _buffer = _readSerial();
-    if (_buffer.indexOf("OK") != -1) {
+    if (_buffer.indexOf("OK") >= 0) {
         return _buffer.substring(_buffer.indexOf(":") + 2, (_buffer.indexOf("OK") - 4));
-    } else
-        return "0";
+    }
+    return "0";
 }
 
 // Update the RTC of the module with the date of GSM.
@@ -296,30 +278,23 @@ bool Sim800l::updateRtc(int utc)
     int hour = tm.substring(0, 2).toInt();
     int day = dt.substring(8, 10).toInt();
     hour = hour + utc;
-    String tmp_hour;
-    String tmp_day;
     // TODO : fix if the day is 0, this occur when day is 1 then decrement to 1,
     //       will need to check the last month what is the last day .
     if (hour < 0) {
         hour += 24;
         day -= 1;
     }
+    String tmp_hour = String(hour);
     if (hour < 10) {
-        tmp_hour = "0" + String(hour);
-    } else {
-        tmp_hour = String(hour);
+        tmp_hour = "0" + tmp_hour;
     }
+    String tmp_day = String(day);
     if (day < 10) {
-        tmp_day = "0" + String(day);
-    } else {
-        tmp_day = String(day);
+        tmp_day = "0" + tmp_day;
     }
     // for debugging
     // Serial.println("at+cclk=\""+dt.substring(2,4)+"/"+dt.substring(5,7)+"/"+tmp_day+","+tmp_hour+":"+tm.substring(3,5)+":"+tm.substring(6,8)+"-03\"\r\n");
     SIM.print("at+cclk=\"" + dt.substring(2, 4) + "/" + dt.substring(5, 7) + "/" + tmp_day + "," + tmp_hour + ":" +
             tm.substring(3, 5) + ":" + tm.substring(6, 8) + "-03\"\r\n");
-    if ((_readSerial().indexOf("ER")) != -1) {
-        return false;
-    } else
-        return true;
+    return ((_readSerial().indexOf("ER")) != -1);
 }
