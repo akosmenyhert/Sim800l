@@ -1,16 +1,16 @@
 /* this library is writing by  Cristian Steib.
  *      steibkhriz@gmail.com
- *  Designed to work with the GSM Sim800l,maybe work with SIM900L
+ *  Designed to work with the GSM Sim800l, maybe work with SIM900L
  *
- *     This library use SoftwareSerial, you can define de RX and TX pin
- *     in the header "Sim800l.h" ,by default the pin is RX=10 TX=11..
- *     be sure that gnd is attached to arduino too.
- *     You can also change the other preferred RESET_PIN
+ *  This library use SoftwareSerial, you can define de RX and TX pin in the
+ *  header "Sim800l.h" ,by default the pin is RX=10 TX=11.. be sure that gnd
+ *  is attached to arduino too.
+ *  You can also change the other preferred RESET_PIN
  *
- *     Esta libreria usa SoftwareSerial, se pueden cambiar los pines de RX y TX
- *     en el archivo header, "Sim800l.h", por defecto los pines vienen configurado en
- *     RX=10 TX=11.
- *     Tambien se puede cambiar el RESET_PIN por otro que prefiera
+ *  Esta libreria usa SoftwareSerial, se pueden cambiar los pines de RX y TX
+ *  en el archivo header, "Sim800l.h", por defecto los pines vienen
+ *  configurado en RX=10 TX=11.
+ *  Tambien se puede cambiar el RESET_PIN por otro que prefiera
  *
  *    PINOUT:
  *        _____________________________
@@ -34,19 +34,20 @@
 #include <SoftwareSerial.h>
 
 SoftwareSerial SIM(RX_PIN, TX_PIN);
-//String _buffer;
-//
+// String _buffer;
+
 void Sim800l::begin()
 {
     SIM.begin(9600);
 #if (LED)
     pinMode(OUTPUT, LED_PIN);
 #endif
-   //reserve memory to prevent intern fragmention
+   // reserve memory to prevent intern fragmention
     _buffer.reserve(255);
 }
 
 /* PRIVATE METHODS */
+
 String Sim800l::_readSerial()
 {
     _timeout = 0;
@@ -75,7 +76,7 @@ void Sim800l::reset()
     while (_readSerial().indexOf("OK") == -1) {
         SIM.print(F("AT\r\n"));
     }
-    //wait for sms ready
+    // wait for sms ready
     while (_readSerial().indexOf("SMS") == -1) {
     }
 #if (LED)
@@ -117,16 +118,23 @@ void Sim800l::signalQuality()
 
 void Sim800l::activateBearerProfile()
 {
+    // set bearer parameter
     SIM.print(F("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\" \r\n"));
-    _buffer = _readSerial();    // set bearer parameter
+    _buffer = _readSerial();
+
+    // set apn
     SIM.print(F("AT+SAPBR=3,1,\"APN\",\"internet\" \r\n"));
-    _buffer = _readSerial();    // set apn
+    _buffer = _readSerial();
+
+    // activate bearer context
     SIM.print(F("AT+SAPBR=1,1 \r\n"));
     delay(1200);
-    _buffer = _readSerial();    // activate bearer context
+    _buffer = _readSerial();
+
+    // get context ip address
     SIM.print(F("AT+SAPBR=2,1\r\n "));
     delay(3000);
-    _buffer = _readSerial();    // get context ip address
+    _buffer = _readSerial();
 }
 
 void Sim800l::deactivateBearerProfile()
@@ -139,7 +147,7 @@ bool Sim800l::answerCall()
 {
     SIM.print(F("ATA\r\n"));
     _buffer = _readSerial();
-    //Response in case of data call, if successfully connected
+    // Response in case of data call, if successfully connected
     if ((_buffer.indexOf("OK")) != -1)
         return true;
     else
@@ -179,18 +187,24 @@ bool Sim800l::hangoffCall()
 
 bool Sim800l::sendSms(char *number, char *text)
 {
-    SIM.print(F("AT+CMGF=1\r"));        //set sms to text mode
+    // set sms to text mode
+    SIM.print(F("AT+CMGF=1\r"));
     _buffer = _readSerial();
-    SIM.print(F("AT+CMGS=\"")); // command to send sms
+
+    // command to send sms
+    SIM.print(F("AT+CMGS=\""));
     SIM.print(number);
     SIM.print(F("\"\r"));
     _buffer = _readSerial();
+
     SIM.print(text);
     SIM.print("\r");
     delay(100);
+
     SIM.print((char)26);
     _buffer = _readSerial();
-    //expect CMGS:xxx   , where xxx is a number,for the sending sms.
+
+    // expect CMGS:xxx   , where xxx is a number,for the sending sms.
     if (((_buffer.indexOf("CMGS")) != -1)) {
         return true;
     } else {
@@ -202,7 +216,7 @@ String Sim800l::getNumberSms(uint8_t index)
 {
     _buffer = readSms(index);
     Serial.println(_buffer.length());
-    //avoid empty sms
+    // avoid empty sms
     if (_buffer.length() > 10) {
         uint8_t _idx1 = _buffer.indexOf("+CMGR:");
         _idx1 = _buffer.indexOf("\",\"", _idx1 + 1);
@@ -259,7 +273,7 @@ void Sim800l::RTCtime(int *day, int *month, int *year, int *hour, int *minute, i
     }
 }
 
-//Get the time  of the base of GSM
+// Get the time  of the base of GSM
 String Sim800l::dateNet()
 {
     SIM.print(F("AT+CIPGSMLOC=2,1\r\n "));
@@ -284,7 +298,7 @@ bool Sim800l::updateRtc(int utc)
     hour = hour + utc;
     String tmp_hour;
     String tmp_day;
-    //TODO : fix if the day is 0, this occur when day is 1 then decrement to 1,
+    // TODO : fix if the day is 0, this occur when day is 1 then decrement to 1,
     //       will need to check the last month what is the last day .
     if (hour < 0) {
         hour += 24;
@@ -300,8 +314,8 @@ bool Sim800l::updateRtc(int utc)
     } else {
         tmp_day = String(day);
     }
-    //for debugging
-    //Serial.println("at+cclk=\""+dt.substring(2,4)+"/"+dt.substring(5,7)+"/"+tmp_day+","+tmp_hour+":"+tm.substring(3,5)+":"+tm.substring(6,8)+"-03\"\r\n");
+    // for debugging
+    // Serial.println("at+cclk=\""+dt.substring(2,4)+"/"+dt.substring(5,7)+"/"+tmp_day+","+tmp_hour+":"+tm.substring(3,5)+":"+tm.substring(6,8)+"-03\"\r\n");
     SIM.print("at+cclk=\"" + dt.substring(2, 4) + "/" + dt.substring(5, 7) + "/" + tmp_day + "," + tmp_hour + ":" +
             tm.substring(3, 5) + ":" + tm.substring(6, 8) + "-03\"\r\n");
     if ((_readSerial().indexOf("ER")) != -1) {
