@@ -32,8 +32,19 @@
 #include "Arduino.h"
 #include "Sim800l.h"
 #include <SoftwareSerial.h>
+#include <avr/pgmspace.h>
 
 SoftwareSerial SIM(RX_PIN, TX_PIN);
+
+/* PROGMEM strings */
+const char PROGMEM PRG_COMMA[]=",";
+const char PROGMEM PRG_COLON[]=":";
+const char PROGMEM PRG_SLASH[]="/";
+const char PROGMEM PRG_ZERO[]="0";
+const char PROGMEM PRG_OK[]="OK";
+const char PROGMEM PRG_ERR[]="ERR";
+const char PROGMEM PRG_AT[]="AT\r\n";
+const char PROGMEM PRG_CRLF[]="\r\n";
 
 void Sim800l::begin()
 {
@@ -85,14 +96,13 @@ void Sim800l::reset()
     digitalWrite(RESET_PIN, 0);
     delay(1000);
     // wait for the module response
-    SIM.print(F("AT\r\n"));
     while (1) {
+        SIM.print(PRG_AT);
         _readSerial();
         // got "OK"? leave loop
-        if (strstr(_buffer,"OK") != NULL) {
+        if (strstr_P(_buffer,PRG_OK) != NULL) {
             break;
         }
-        SIM.print(F("AT\r\n"));
     }
     // wait for sms ready
     while (1) {
@@ -136,7 +146,8 @@ void Sim800l::signalQuality()
        99     Not known or not detectable
      */
     SIM.print(F("AT+CSQ\r\n"));
-    Serial.println(_readSerial());
+    _readSerial();
+    Serial.println(_buffer);
 }
 
 void Sim800l::activateBearerProfile()
@@ -177,14 +188,14 @@ bool Sim800l::answerCall()
     SIM.print(F("ATA\r\n"));
     _readSerial();
     // Response in case of data call, if successfully connected
-    return (strstr(_buffer,"OK")!=NULL);
+    return (strstr_P(_buffer,PRG_OK)!=NULL);
 }
 
 void Sim800l::callNumber(char *number)
 {
     SIM.print(F("ATD"));
     SIM.print(number);
-    SIM.print(F("\r\n"));
+    SIM.print(PRG_CRLF);
 }
 
 int Sim800l::getCallStatus()
@@ -212,7 +223,7 @@ bool Sim800l::hangoffCall()
 {
     SIM.print(F("ATH\r\n"));
     _readSerial();
-    return (strstr(_buffer,"OK")!=NULL);
+    return (strstr_P(_buffer,PRG_OK)!=NULL);
 }
 
 bool Sim800l::sendSms(char *number, char *text)
@@ -225,12 +236,12 @@ bool Sim800l::sendSms(char *number, char *text)
     // command to send sms
     SIM.print(F("AT+CMGS=\""));
     SIM.print(number);
-    SIM.print(F("\"\r"));
+    SIM.print(PRG_CRLF);
     // eat response
     _readSerial();
 
     SIM.print(text);
-    SIM.print("\r");
+    SIM.print(F("\r"));
     delay(100);
 
     // send EOF (^Z)
@@ -265,10 +276,10 @@ int Sim800l::readSms(uint8_t index)
 {
     SIM.print(F("AT+CMGF=1\r"));
     _readSerial();
-    if (strstr(_buffer,"ER")==NULL) {
+    if (strstr_P(_buffer,PRG_ERR)==NULL) {
         SIM.print(F("AT+CMGR="));
         SIM.print(index);
-        SIM.print("\r");
+        SIM.print(F("\r"));
         int len=_readSerial();
         if (strstr(_buffer,"CMGR:")!=NULL) {
             return len;
@@ -281,9 +292,9 @@ int Sim800l::readSms(uint8_t index)
 
 bool Sim800l::delAllSms()
 {
-    SIM.print(F("at+cmgda=\"del all\"\n\r"));
+    SIM.print(F("at+cmgda=\"del all\"\r\n"));
     _readSerial();
-    return (strstr(_buffer,"OK")!=NULL);
+    return (strstr_P(_buffer,PRG_OK)!=NULL);
 }
 
 // returns -1 if error, otherwise 0;
@@ -291,7 +302,7 @@ int Sim800l::RTCtime(int *day, int *month, int *year, int *hour, int *minute, in
 {
     SIM.print(F("at+cclk?\r\n"));
     _readSerial();
-    if (strstr(_buffer,"ERR")!=NULL) {
+    if (strstr_P(_buffer,PRG_ERR)!=NULL) {
         return -1;
     }
     char* pos1=strstr(_buffer,"\"");
@@ -314,11 +325,11 @@ int Sim800l::RTCtime(int *day, int *month, int *year, int *hour, int *minute, in
 // Get the length of the date,time string of the base of GSM
 int Sim800l::dateNet()
 {
-    SIM.print(F("AT+CIPGSMLOC=2,1\r\n "));
+    SIM.print(F("AT+CIPGSMLOC=2,1\r\n"));
     _readSerial();
-    char* posEND=strstr(_buffer,"OK");
+    char* posEND=strstr_P(_buffer,PRG_OK);
     if (posEND!=NULL) {
-        char* posSTART=strstr(_buffer,":");
+        char* posSTART=strstr_P(_buffer,PRG_COLON);
         if (posSTART!=NULL) {
             posSTART+=2;
             posEND-=4;
@@ -332,29 +343,57 @@ int Sim800l::dateNet()
     return 0;
 }
 
+#define LEADING_ZERO(a) { if (a<10) { SIM.print(PRG_ZERO); } SIM.print(a); }
+
 // Update the RTC of the module with the date of GSM.
 bool Sim800l::updateRtc(int utc)
 {
     activateBearerProfile();
     // get current date/time
     dateNet();
-    char* dt=strstr(_buffer,",");
+    char* dt=strstr_P(_buffer,PRG_COMMA);
     if (dt!=NULL) {
         // bump past comma
         dt++;
-        char* tm = strstr(_buffer,",")+1;
+        char* tm = strstr_P(_buffer,PRG_COMMA)+1;
         tm[9]=0; uint8_t mSeconds=atoi(tm+6);
         tm[6]=0; uint8_t mMinutes=atoi(tm+3);
         tm[3]=0; uint8_t mHours=atoi(tm);
         dt[9]=0; uint8_t mDay=atoi(dt+7);
         dt[6]=0; uint8_t mMonth=atoi(dt+4);
         dt[3]=0; uint8_t mYear=atoi(dt);
-        uint8_t utcQuarters=utc*4;
-        snprintf(_buffer,BUFLEN,
-                "at+cclk=\"%02d/%02d/%02d,%02d:%02d:%02d%+02d\r\n",
-                mYear,mMonth,mDay,mHours,mMinutes,mSeconds,utcQuarters);
-        SIM.print(_buffer);
+        int8_t utcQuarters=utc*4;
+
+        SIM.print(F("AT+CCLK=\""));
+
+        LEADING_ZERO(mYear);
+        SIM.print(PRG_SLASH);
+        LEADING_ZERO(mMonth);
+        SIM.print(PRG_SLASH);
+        LEADING_ZERO(mDay);
+
+        SIM.print(PRG_COMMA);
+
+        LEADING_ZERO(mHours);
+        SIM.print(PRG_COLON);
+        LEADING_ZERO(mMinutes);
+        SIM.print(PRG_COLON);
+        LEADING_ZERO(mSeconds);
+
+        if (utcQuarters<0) {
+            SIM.print(F("-"));
+        } else {
+            SIM.print(F("+"));
+        }
+        // can be negative, handle it
+        if (utcQuarters<0) {
+            // make it positive
+            utcQuarters=-utcQuarters;
+        }
+        LEADING_ZERO(utcQuarters);
+
+        SIM.print(PRG_CRLF);
     }
     deactivateBearerProfile();
-    return (strstr(_buffer,"ER")!=NULL);
+    return (strstr_P(_buffer,PRG_ERR)!=NULL);
 }
