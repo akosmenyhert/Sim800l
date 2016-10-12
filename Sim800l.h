@@ -68,7 +68,7 @@ class Sim800l {
     // Methods for sms || Funciones de SMS.
     bool sendSms(char *number, char *text);
     // return LENGTH of all the content of sms
-    int readSms(uint8_t index);
+    char* readSms(uint8_t index);
     // return the number of the sms..
     int getNumberSms(uint8_t index);
     // return :  OK or ERROR ..

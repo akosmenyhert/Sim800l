@@ -256,7 +256,8 @@ bool Sim800l::sendSms(char *number, char *text)
 // return number of sms
 int Sim800l::getNumberSms(uint8_t index)
 {
-    int len=readSms(index);
+    readSms(index);
+    int len=strlen(_buffer);
     Serial.println(len);
     // avoid empty sms
     if (len>10) {
@@ -272,7 +273,7 @@ int Sim800l::getNumberSms(uint8_t index)
     return -1;
 }
 
-int Sim800l::readSms(uint8_t index)
+char* Sim800l::readSms(uint8_t index)
 {
     SIM.print(F("AT+CMGF=1\r"));
     _readSerial();
@@ -280,14 +281,14 @@ int Sim800l::readSms(uint8_t index)
         SIM.print(F("AT+CMGR="));
         SIM.print(index);
         SIM.print(F("\r"));
-        int len=_readSerial();
+        _readSerial();
         if (strstr(_buffer,"CMGR:")!=NULL) {
-            return len;
+            return _buffer;
         }
     }
     // zero terminate zero answer
     _buffer[0]=0;
-    return 0;
+    return NULL;
 }
 
 bool Sim800l::delAllSms()
