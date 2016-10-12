@@ -45,28 +45,32 @@
 //pin to indicate states.
 #define LED_PIN 13
 
+// maximum size of buffer (less one for safety)
+const int BUFLEN=255;
+
 class Sim800l {
   private:
-    int    _timeout;
-    String _buffer;
-    String _readSerial();
+    int  _timeout;
+    char _buffer[BUFLEN];
+
+    int     _readSerial();
 
   public:
     void begin();
     void reset();
 
     // Methods for calling || Funciones de llamadas.
-    bool    answerCall();
-    void    callNumber(char *number);
-    bool    hangoffCall();
-    uint8_t getCallStatus();
+    bool answerCall();
+    void callNumber(char  *number);
+    bool hangoffCall();
+    int  getCallStatus();
 
     // Methods for sms || Funciones de SMS.
     bool sendSms(char *number, char *text);
-    // return all the content of sms
-    String readSms(uint8_t index);
+    // return LENGTH of all the content of sms
+    int readSms(uint8_t index);
     // return the number of the sms..
-    String getNumberSms(uint8_t index);
+    int getNumberSms(uint8_t index);
     // return :  OK or ERROR ..
     bool delAllSms();
 
@@ -76,9 +80,10 @@ class Sim800l {
     void deactivateBearerProfile();
 
     // get time with the variables by reference
-    void RTCtime(int *day, int *month, int *year, int *hour, int *minute, int *second);
-    // return date,time, of the network
-    String dateNet();
+    // returns -1 on error, 0 for good values
+    int RTCtime(int *day, int *month, int *year, int *hour, int *minute, int *second);
+    // return LENGTH of date,time string of the network
+    int dateNet();
     // Update the RTC Clock with de Time AND Date of red-.
     bool updateRtc(int utc);
 };
