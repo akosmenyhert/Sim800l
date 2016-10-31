@@ -1,0 +1,36 @@
+{
+  "name": "Sim800l",
+  "keywords": "sim800l, gsm, sms, call, gprs",
+  "description": "Arduino Library for SIM800L gsm module (originally forked from https://github.com/cristiansteib/Sim800l and https://github.com/lornix/Sim800l)",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/akosmenyhert/Sim800l"
+  },
+  "authors":
+  [
+    {
+      "name": "Cristian Steib",
+      "email": "steibkhriz@gmail.com",
+      "url": "https://github.com/cristiansteib"
+    },
+    {
+      "name": "L Nix",
+      "email": "lornix@lornix.com",
+      "url": "https://github.com/lornix"
+    },
+    {
+      "name": "Akos Menyhert",
+      "email": "menyhert.akos@gmail.com",
+      "url": "https://github.com/akosmenyhert"
+    }
+  ],
+  "dependencies":
+  {
+    "name": "SoftwareSerial",
+    "frameworks": "arduino"
+  },
+  "version": "1.0.0",
+  "frameworks": "arduino",
+  "platforms": "*"
+}
