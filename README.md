@@ -1,4 +1,10 @@
-## Library SIM800l Module for Arduino UNO
+**Originaly forked from https://github.com/cristiansteib/Sim800l and https://github.com/lornix/Sim800l**
+
+
+## Platformio compatible library
+
+
+## Library SIM800L Module for Arduino
 The Purpose of This library is to use the module in the most easy way and transparent.  
 Website: [Sim800l library](https://cristiansteib.github.io/Sim800l/)
 
