@@ -32,19 +32,17 @@
 #include "Arduino.h"
 #include "Sim800l.h"
 #include <SoftwareSerial.h>
-#include <avr/pgmspace.h>
 
 SoftwareSerial SIM(RX_PIN, TX_PIN);
 
-/* PROGMEM strings */
-const char PROGMEM PRG_COMMA[]=",";
-const char PROGMEM PRG_COLON[]=":";
-const char PROGMEM PRG_SLASH[]="/";
-const char PROGMEM PRG_ZERO[]="0";
-const char PROGMEM PRG_OK[]="OK";
-const char PROGMEM PRG_ERR[]="ERR";
-const char PROGMEM PRG_AT[]="AT\r\n";
-const char PROGMEM PRG_CRLF[]="\r\n";
+const char PRG_COMMA[]=",";
+const char PRG_COLON[]=":";
+const char PRG_SLASH[]="/";
+const char PRG_ZERO[]="0";
+const char PRG_OK[]="OK";
+const char PRG_ERR[]="ERR";
+const char PRG_AT[]="AT\r\n";
+const char PRG_CRLF[]="\r\n";
 
 void Sim800l::begin()
 {
