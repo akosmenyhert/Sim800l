@@ -1,4 +1,4 @@
-**Originaly forked from https://github.com/cristiansteib/Sim800l and https://github.com/lornix/Sim800l**
+**Originaly forked from https://github.com/lornix/Sim800l which is forked from https://github.com/cristiansteib/Sim800l**
 
 
 ## Platformio compatible library
